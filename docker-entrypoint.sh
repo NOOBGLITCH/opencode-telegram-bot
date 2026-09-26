@@ -53,4 +53,10 @@ else
   echo "[boot] WARN: opencode binary not found; bot will report server unavailable"
 fi
 
-exec run_as_node "$@"
+if command -v su-exec >/dev/null 2>&1; then
+  exec su-exec node "$@"
+elif command -v gosu >/dev/null 2>&1; then
+  exec gosu node "$@"
+else
+  exec "$@"
+fi
