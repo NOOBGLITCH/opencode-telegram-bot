@@ -4,12 +4,14 @@
 [![CI](https://github.com/grinev/opencode-telegram-bot/actions/workflows/ci.yml/badge.svg)](https://github.com/grinev/opencode-telegram-bot/actions/workflows/ci.yml)
 [![License: MIT](https://img.shields.io/badge/License-MIT-blue.svg)](LICENSE)
 [![Node.js](https://img.shields.io/badge/node-%3E%3D22.14-brightgreen)](https://nodejs.org)
-[![Deploy on Railway](https://railway.com/button.svg)](https://railway.com/new/template?template=https://github.com/NOOBGLITCH/opencode-telegram-bot)
+[![Deploy on Railway](https://railway.com/button.svg)](https://railway.com/new/template/Ckzs7q?utm_medium=integration&utm_source=button&utm_campaign=opencode-telegram-bot)
 [![Follow updates](https://img.shields.io/badge/-Follow%20updates-333333?logo=x)](https://x.com/grin_rus)
 [![Community](https://img.shields.io/badge/Community-Telegram-26A5E4?logo=telegram&logoColor=white)](https://t.me/+Fj_IyKRi6-41MGUy)
 
-<!-- Railway template: after `railway templates publish`, replace the button URL above with:
-  https://railway.com/new/template/<TEMPLATE_CODE>?utm_medium=integration&utm_source=button&utm_campaign=opencode-telegram-bot
+<!-- Railway template: draft Ckzs7q (2b51cee8-3ad4-4476-bfdc-a066ae36b1ec), status UNPUBLISHED.
+  Publish with:
+  railway templates publish 2b51cee8-3ad4-4476-bfdc-a066ae36b1ec --category AI/ML --description "..." --readme-file TEMPLATE.md --json
+  After publish the button URL above (new/template/Ckzs7q) is the public link.
   See https://docs.railway.com/templates/publish-and-share -->
 
 OpenCode Telegram Bot is a secure Telegram client for [OpenCode](https://opencode.ai) CLI that runs on your local machine.
@@ -521,7 +523,7 @@ Port 4096 is **not** exposed by the bot image; it belongs to the OpenCode server
 
 ### Railway Deployment
 
-[![Deploy on Railway](https://railway.com/button.svg)](https://railway.com/new/template?template=https://github.com/NOOBGLITCH/opencode-telegram-bot)
+[![Deploy on Railway](https://railway.com/button.svg)](https://railway.com/new/template/Ckzs7q?utm_medium=integration&utm_source=button&utm_campaign=opencode-telegram-bot)
 
 Railway auto-detects the `Dockerfile` at repo root. `railway.toml` is included for legacy services only (Config as Code is deprecated, cutoff 2026-12-01).
 
