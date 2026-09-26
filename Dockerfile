@@ -4,7 +4,7 @@
 FROM --platform=linux/amd64 node:22-alpine AS builder
 
 LABEL org.opencontainers.image.title="opencode-telegram-bot"
-LABEL org.opencontainers.image.source="https://github.com/grinev/opencode-telegram-bot"
+LABEL org.opencontainers.image.source="https://github.com/NOOBGLITCH/opencode-telegram-bot"
 LABEL org.opencontainers.image.licenses="MIT"
 
 WORKDIR /app
@@ -37,7 +37,7 @@ RUN npm run build \
 FROM --platform=linux/amd64 node:22-alpine AS runtime
 
 LABEL org.opencontainers.image.title="opencode-telegram-bot"
-LABEL org.opencontainers.image.source="https://github.com/grinev/opencode-telegram-bot"
+LABEL org.opencontainers.image.source="https://github.com/NOOBGLITCH/opencode-telegram-bot"
 LABEL org.opencontainers.image.licenses="MIT"
 
 WORKDIR /app

@@ -4,15 +4,14 @@
 [![CI](https://github.com/grinev/opencode-telegram-bot/actions/workflows/ci.yml/badge.svg)](https://github.com/grinev/opencode-telegram-bot/actions/workflows/ci.yml)
 [![License: MIT](https://img.shields.io/badge/License-MIT-blue.svg)](LICENSE)
 [![Node.js](https://img.shields.io/badge/node-%3E%3D22.14-brightgreen)](https://nodejs.org)
-[![Deploy on Railway](https://railway.com/button.svg)](https://railway.com/new/template/Ckzs7q?utm_medium=integration&utm_source=button&utm_campaign=opencode-telegram-bot)
+[![Deploy on Railway](https://railway.com/button.svg)](https://railway.com/deploy/opencode-telegram-bot)
 [![Follow updates](https://img.shields.io/badge/-Follow%20updates-333333?logo=x)](https://x.com/grin_rus)
 [![Community](https://img.shields.io/badge/Community-Telegram-26A5E4?logo=telegram&logoColor=white)](https://t.me/+Fj_IyKRi6-41MGUy)
 
-<!-- Railway template: draft Ckzs7q (2b51cee8-3ad4-4476-bfdc-a066ae36b1ec), status UNPUBLISHED.
-  Publish with:
-  railway templates publish 2b51cee8-3ad4-4476-bfdc-a066ae36b1ec --category AI/ML --description "..." --readme-file TEMPLATE.md --json
-  After publish the button URL above (new/template/Ckzs7q) is the public link.
-  See https://docs.railway.com/templates/publish-and-share -->
+<!-- Railway template PUBLISHED: https://railway.com/deploy/opencode-telegram-bot
+  (id 2b51cee8-3ad4-4476-bfdc-a066ae36b1ec, code opencode-telegram-bot).
+  Republish metadata with:
+  railway templates publish 2b51cee8-3ad4-4476-bfdc-a066ae36b1ec --category AI/ML --description "..." --readme-file TEMPLATE.md --json -->
 
 OpenCode Telegram Bot is a secure Telegram client for [OpenCode](https://opencode.ai) CLI that runs on your local machine.
 
@@ -448,7 +447,7 @@ Since the bot runs locally on your machine and connects to your local OpenCode s
 ### Running from Source
 
 ```bash
-git clone https://github.com/grinev/opencode-telegram-bot.git
+git clone https://github.com/NOOBGLITCH/opencode-telegram-bot.git
 cd opencode-telegram-bot
 npm install
 cp .env.example .env
@@ -466,7 +465,7 @@ npm run dev
 The bot can also be run as a container using Docker and Docker Compose. The image contains **only the Telegram bot**. OpenCode stays on the host and must already be running before you start the container (`opencode serve --port 4096`). `/opencode_start` and `/opencode_stop` do not work from inside the container.
 
 ```bash
-git clone https://github.com/grinev/opencode-telegram-bot.git
+git clone https://github.com/NOOBGLITCH/opencode-telegram-bot.git
 cd opencode-telegram-bot
 cp .env.example .env
 # Edit .env with your bot token, user ID, and model settings
@@ -523,7 +522,7 @@ Port 4096 is **not** exposed by the bot image; it belongs to the OpenCode server
 
 ### Railway Deployment
 
-[![Deploy on Railway](https://railway.com/button.svg)](https://railway.com/new/template/Ckzs7q?utm_medium=integration&utm_source=button&utm_campaign=opencode-telegram-bot)
+[![Deploy on Railway](https://railway.com/button.svg)](https://railway.com/deploy/opencode-telegram-bot)
 
 Railway auto-detects the `Dockerfile` at repo root. `railway.toml` is included for legacy services only (Config as Code is deprecated, cutoff 2026-12-01).
 
