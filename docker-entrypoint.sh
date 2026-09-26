@@ -46,8 +46,7 @@ fi
 if command -v opencode >/dev/null 2>&1; then
   echo "[boot] starting opencode serve on 127.0.0.1:$OPENCODE_PORT ..."
   run_as_node sh -c "nohup opencode serve --port $OPENCODE_PORT >$DATA_DIR/logs/opencode-serve.log 2>&1 &"
-  run_as_node node -e 'const net=require("net");const port=Number(process.env.OPENCODE_PORT||4096);const t0=Date.now();(function p(){const s=net.connect(port,"127.0.0.1");s.on("connect",()=>{s.end();process.exit(0)});s.on("error",()=>{if(Date.now()-t0>30000)process.exit(1);setTimeout(p,500)}})()'
-  if [ $? -ne 0 ]; then
+  if ! run_as_node env OPENCODE_PORT="$OPENCODE_PORT" node -e 'const net=require("net");const port=Number(process.env.OPENCODE_PORT||4096);const t0=Date.now();(function p(){const s=net.connect(port,"127.0.0.1");s.on("connect",()=>{s.end();process.exit(0)});s.on("error",()=>{if(Date.now()-t0>30000){process.exit(1)}setTimeout(p,500)});})()'; then
     echo "[boot] WARN: opencode serve not reachable yet; bot auto-restart may heal it"
   fi
 else
