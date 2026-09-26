@@ -44,7 +44,14 @@ WORKDIR /app
 
 # dumb-init (signals) + su-exec (root -> node drop for Railway root-mounted
 # volumes) + ca-certificates (Telegram HTTPS) + libstdc++ (better-sqlite3)
-RUN apk add --no-cache dumb-init su-exec ca-certificates libstdc++
+# + git (WORKSPACE_REPOS cloning at startup)
+RUN apk add --no-cache dumb-init su-exec ca-certificates libstdc++ git
+
+# OpenCode engine (same `opencode serve` the bot manages locally).
+# Installed globally so `opencode` is on PATH for the node user.
+RUN npm install -g opencode-ai@latest --no-audit --no-fund \
+    && npm cache clean --force \
+    && rm -rf /root/.npm /tmp/*
 
 # Set production environment
 ENV NODE_ENV=production \
