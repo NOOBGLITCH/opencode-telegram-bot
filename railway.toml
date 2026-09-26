@@ -1,0 +1,31 @@
+# railway.toml — Railway service config (Config as Code).
+#
+# NOTE: Config as Code is deprecated. New Railway services cannot opt into it;
+# existing railway.toml files keep working until 2026-12-01 (hard cutoff).
+# Prefer Infrastructure as Code (.railway/railway.ts) for new projects.
+# See https://docs.railway.com/config-as-code
+#
+# This file is kept for legacy services and explicit Dockerfile builds.
+# Railway auto-detects `Dockerfile` at repo root, so [build] here is explicit only.
+#
+# Volumes / swap:
+# - Volumes are NOT configurable in railway.toml. Attach via dashboard or CLI:
+#     railway volume add --service opencode-telegram-bot --mount-path /app/data --json
+#     railway volume list --json
+# - This matches docker-compose `opencode-bot-data:/app/data`.
+# - OPENCODE_TELEGRAM_HOME=/app/data is set in the Dockerfile.
+# - Railway has no swap config; if the worker OOMs, raise the service memory
+#   or set deploy.numReplicas / vertical scaling in the dashboard.
+
+[build]
+builder = "DOCKERFILE"
+dockerfilePath = "Dockerfile"
+watchPatterns = ["src/**", "package.json", "package-lock.json", "tsconfig.json", "Dockerfile"]
+
+[deploy]
+# Use Dockerfile ENTRYPOINT (dumb-init) + CMD (node dist/index.js).
+# startCommand is intentionally omitted so the image CMD wins.
+# Worker has no HTTP port: no healthcheckPath. Crashes are handled by restart policy.
+healthcheckTimeout = 300
+restartPolicyType = "ALWAYS"
+restartPolicyMaxRetries = 10

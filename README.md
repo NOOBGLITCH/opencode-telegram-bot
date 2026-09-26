@@ -4,8 +4,13 @@
 [![CI](https://github.com/grinev/opencode-telegram-bot/actions/workflows/ci.yml/badge.svg)](https://github.com/grinev/opencode-telegram-bot/actions/workflows/ci.yml)
 [![License: MIT](https://img.shields.io/badge/License-MIT-blue.svg)](LICENSE)
 [![Node.js](https://img.shields.io/badge/node-%3E%3D22.14-brightgreen)](https://nodejs.org)
+[![Deploy on Railway](https://railway.com/button.svg)](https://railway.com/new/template?template=https://github.com/NOOBGLITCH/opencode-telegram-bot)
 [![Follow updates](https://img.shields.io/badge/-Follow%20updates-333333?logo=x)](https://x.com/grin_rus)
 [![Community](https://img.shields.io/badge/Community-Telegram-26A5E4?logo=telegram&logoColor=white)](https://t.me/+Fj_IyKRi6-41MGUy)
+
+<!-- Railway template: after `railway templates publish`, replace the button URL above with:
+  https://railway.com/new/template/<TEMPLATE_CODE>?utm_medium=integration&utm_source=button&utm_campaign=opencode-telegram-bot
+  See https://docs.railway.com/templates/publish-and-share -->
 
 OpenCode Telegram Bot is a secure Telegram client for [OpenCode](https://opencode.ai) CLI that runs on your local machine.
 
@@ -513,6 +518,50 @@ These need the bot process to see host project paths or to spawn/stop `opencode`
 `/projects`, `/sessions`, prompts, and live updates still go through the OpenCode HTTP API and work as usual.
 
 Port 4096 is **not** exposed by the bot image; it belongs to the OpenCode server, which runs separately.
+
+### Railway Deployment
+
+[![Deploy on Railway](https://railway.com/button.svg)](https://railway.com/new/template?template=https://github.com/NOOBGLITCH/opencode-telegram-bot)
+
+Railway auto-detects the `Dockerfile` at repo root. `railway.toml` is included for legacy services only (Config as Code is deprecated, cutoff 2026-12-01).
+
+**1. Create service from this repo** (dashboard: New Service → GitHub repo, or CLI):
+
+```bash
+railway login
+railway init --name opencode-telegram-bot
+railway up --detach -m "initial deploy"
+```
+
+**2. Attach persistent volume for bot state** (`/app/data` = `settings.json`, logs, SQLite):
+
+```bash
+railway volume add --service opencode-telegram-bot --mount-path /app/data --json
+```
+
+This replaces compose volume `opencode-bot-data:/app/data`. There is no swap setting on Railway; if the worker OOMs, increase service memory in the dashboard.
+
+**3. Set required variables:**
+
+```bash
+railway variable set TELEGRAM_BOT_TOKEN=123456:ABC-DEF --service opencode-telegram-bot
+railway variable set TELEGRAM_ALLOWED_USER_ID=123456789 --service opencode-telegram-bot
+railway variable set OPENCODE_MODEL_PROVIDER=openai --service opencode-telegram-bot
+railway variable set OPENCODE_MODEL_ID=gpt-4-turbo --service opencode-telegram-bot
+railway variable set OPENCODE_API_URL=https://your-opencode-host:4096 --service opencode-telegram-bot
+railway variable set OPENCODE_TELEGRAM_CONTAINER=1 --service opencode-telegram-bot
+```
+
+> On Railway there is no local OpenCode at `127.0.0.1:4096`. Point `OPENCODE_API_URL` at a reachable OpenCode server with auth (`OPENCODE_SERVER_USERNAME` / `OPENCODE_SERVER_PASSWORD` if needed). `/opencode_start`, `/opencode_stop`, `/open`, `/ls`, `/worktree` behave as in Docker (limited without host filesystem).
+
+**4. Verify:**
+
+```bash
+railway deployment list --service opencode-telegram-bot --json
+railway logs --service opencode-telegram-bot --lines 200 --json
+```
+
+See `railway.toml` comments and https://docs.railway.com/builds/dockerfiles.
 
 ### Available Scripts
 
