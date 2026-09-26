@@ -1,5 +1,7 @@
-# Build stage
-FROM node:22-bookworm-slim AS builder
+# syntax=docker/dockerfile:1
+# Pinned to linux/amd64: Railway runs amd64; alpine keeps the image superlite.
+# better-sqlite3 compiles against musl in the builder below (same libc as runtime).
+FROM --platform=linux/amd64 node:22-alpine AS builder
 
 LABEL org.opencontainers.image.title="opencode-telegram-bot"
 LABEL org.opencontainers.image.source="https://github.com/grinev/opencode-telegram-bot"
@@ -11,12 +13,8 @@ ENV NPM_CONFIG_AUDIT=false \
     NPM_CONFIG_FUND=false \
     NPM_CONFIG_UPDATE_NOTIFIER=false
 
-# Install only native build dependencies
-RUN apt-get update && apt-get install -y --no-install-recommends \
-    python3 \
-    make \
-    g++ \
-    && rm -rf /var/lib/apt/lists/*
+# Native build deps for better-sqlite3 (musl)
+RUN apk add --no-cache python3 make g++
 
 # Copy package files first for better layer caching
 COPY package.json package-lock.json ./
@@ -28,15 +26,15 @@ RUN npm ci --no-audit --no-fund
 COPY tsconfig.json ./
 COPY src/ ./src/
 
-# Build the project
-RUN npm run build
+# Build, then strip dev deps + npm cache in the same layer chain
+RUN npm run build \
+    && npm prune --omit=dev \
+    && npm cache clean --force \
+    && rm -rf /root/.npm /tmp/*
 
-# Prune dev dependencies from the final image
-RUN npm prune --omit=dev
 
-
-# Runtime stage
-FROM node:22-bookworm-slim AS runtime
+# Runtime stage: alpine superlite (~5MB base libs + node). su-exec replaces gosu.
+FROM --platform=linux/amd64 node:22-alpine AS runtime
 
 LABEL org.opencontainers.image.title="opencode-telegram-bot"
 LABEL org.opencontainers.image.source="https://github.com/grinev/opencode-telegram-bot"
@@ -44,14 +42,9 @@ LABEL org.opencontainers.image.licenses="MIT"
 
 WORKDIR /app
 
-# Install dumb-init, gosu and ca-certificates for proper signal handling,
-# privilege drop (Railway volumes mount as root) and HTTPS
-RUN apt-get update && apt-get install -y --no-install-recommends \
-    dumb-init \
-    gosu \
-    ca-certificates \
-    && rm -rf /var/lib/apt/lists/* \
-    && apt-get clean
+# dumb-init (signals) + su-exec (root -> node drop for Railway root-mounted
+# volumes) + ca-certificates (Telegram HTTPS) + libstdc++ (better-sqlite3)
+RUN apk add --no-cache dumb-init su-exec ca-certificates libstdc++
 
 # Set production environment
 ENV NODE_ENV=production \
@@ -83,6 +76,6 @@ HEALTHCHECK --interval=30s --timeout=5s --start-period=30s --retries=3 \
 
 STOPSIGNAL SIGTERM
 
-# dumb-init stays PID 1; entrypoint drops to node via gosu
+# dumb-init stays PID 1; entrypoint drops to node via su-exec (alpine)
 ENTRYPOINT ["dumb-init", "--", "/usr/local/bin/docker-entrypoint.sh"]
 CMD ["node", "dist/index.js"]
