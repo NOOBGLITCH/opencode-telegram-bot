@@ -44,9 +44,11 @@ LABEL org.opencontainers.image.licenses="MIT"
 
 WORKDIR /app
 
-# Install dumb-init and ca-certificates for proper signal handling and HTTPS
+# Install dumb-init, gosu and ca-certificates for proper signal handling,
+# privilege drop (Railway volumes mount as root) and HTTPS
 RUN apt-get update && apt-get install -y --no-install-recommends \
     dumb-init \
+    gosu \
     ca-certificates \
     && rm -rf /var/lib/apt/lists/* \
     && apt-get clean
@@ -70,8 +72,9 @@ COPY --from=builder --chown=node:node /app/dist ./dist
 COPY --from=builder --chown=node:node /app/node_modules ./node_modules
 COPY --from=builder --chown=node:node /app/package.json ./package.json
 
-# Run as non-root node user (uid 1000)
-USER node
+# Entrypoint fixes Railway volume ownership (/app/data mounts as root),
+# then drops to the non-root node user. Stays root until exec.
+COPY --chown=root:root --chmod=755 docker-entrypoint.sh /usr/local/bin/docker-entrypoint.sh
 
 # Worker has no HTTP port, so this only verifies the runtime is intact.
 # Railway restart policy (railway.toml) handles crash recovery.
@@ -80,6 +83,6 @@ HEALTHCHECK --interval=30s --timeout=5s --start-period=30s --retries=3 \
 
 STOPSIGNAL SIGTERM
 
-# Single dumb-init entrypoint
-ENTRYPOINT ["dumb-init", "--"]
+# dumb-init stays PID 1; entrypoint drops to node via gosu
+ENTRYPOINT ["dumb-init", "--", "/usr/local/bin/docker-entrypoint.sh"]
 CMD ["node", "dist/index.js"]
