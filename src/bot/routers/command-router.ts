@@ -38,19 +38,15 @@ interface CommandRouterDeps {
   localCommandRegistry?: LocalCommandRegistry;
 }
 
-let commandsInitialized = false;
+const initializedChats = new Set<number>();
+
 export async function ensureCommandsInitialized(
   ctx: Context,
   next: NextFunction,
   localCommandRegistry = LocalCommandRegistry.empty(),
 ): Promise<void> {
-  if (commandsInitialized || !ctx.from || ctx.from.id !== config.telegram.allowedUserId) {
-    await next();
-    return;
-  }
-
-  if (!ctx.chat) {
-    logger.warn("[Bot] Cannot initialize commands: chat context is missing");
+  const isAllowedUser = ctx.from && (config.telegram.allowedUserIds?.includes(ctx.from.id) ?? ctx.from.id === config.telegram.allowedUserId);
+  if (!isAllowedUser || !ctx.chat || initializedChats.has(ctx.chat.id)) {
     await next();
     return;
   }
@@ -63,7 +59,7 @@ export async function ensureCommandsInitialized(
       },
     });
 
-    commandsInitialized = true;
+    initializedChats.add(ctx.chat.id);
     logger.debug(`[Bot] Commands initialized for authorized user (chat_id=${ctx.chat.id})`);
   } catch (err) {
     logger.error("[Bot] Failed to set commands:", err);

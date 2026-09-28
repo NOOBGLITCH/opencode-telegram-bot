@@ -165,6 +165,7 @@ function getOptionalSttRequestFormatEnvVar(
 export function buildTelegramConfig(): {
   token: string;
   allowedUserId: number;
+  allowedUserIds: number[];
   proxyUrl: string;
   apiRoot: string;
   proxySecret: string;
@@ -191,9 +192,16 @@ export function buildTelegramConfig(): {
     );
   }
 
+  const rawAllowed = getEnvVar("TELEGRAM_ALLOWED_USER_ID");
+  const allowedUserIds = rawAllowed
+    .split(/[\s,]+/)
+    .map((id) => parseInt(id.trim(), 10))
+    .filter((id) => !isNaN(id));
+
   return {
     token: getEnvVar("TELEGRAM_BOT_TOKEN"),
-    allowedUserId: parseInt(getEnvVar("TELEGRAM_ALLOWED_USER_ID"), 10),
+    allowedUserId: allowedUserIds[0] ?? 0,
+    allowedUserIds,
     proxyUrl,
     apiRoot,
     proxySecret,
