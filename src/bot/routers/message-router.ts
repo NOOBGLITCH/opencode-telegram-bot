@@ -176,11 +176,14 @@ export function registerMessageRouter(bot: Bot<Context>, deps: MessageRouterDeps
     await handlePhotoMessage(ctx, botDeps);
   });
 
-  bot.on("message:document", async (ctx) => {
-    logger.debug(`[Bot] Received document message, chatId=${ctx.chat.id}`);
-    container.setTelegramContext(bot, ctx.chat.id);
-    await handleDocumentMessage(ctx, botDeps);
-  });
+  bot.on(
+    ["message:document", "message:video", "message:animation"],
+    async (ctx) => {
+      logger.debug(`[Bot] Received media/document message, chatId=${ctx.chat.id}`);
+      container.setTelegramContext(bot, ctx.chat.id);
+      await handleDocumentMessage(ctx, botDeps);
+    },
+  );
 
   bot.on("message:text", async (ctx) => {
     const input = getIncomingPrompt(ctx);

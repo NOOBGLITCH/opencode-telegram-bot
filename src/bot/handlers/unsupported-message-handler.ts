@@ -3,10 +3,7 @@ import { t } from "../../i18n/index.js";
 import { logger } from "../../utils/logger.js";
 
 const UNSUPPORTED_CONTENT_FIELDS = [
-  "video",
   "sticker",
-  "animation",
-  "video_note",
   "location",
   "contact",
   "poll",

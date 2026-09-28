@@ -177,8 +177,20 @@ const APPLICATION_TEXT_MIME_TYPES = new Set([
   "application/json",
   "application/xml",
   "application/javascript",
+  "application/x-javascript",
   "application/x-yaml",
   "application/sql",
+  "application/vnd.apple.mpegurl",
+  "application/x-mpegurl",
+  "audio/x-mpegurl",
+  "audio/mpegurl",
+  "application/mpegurl",
+  "application/x-subrip",
+  "application/x-sh",
+  "application/x-csh",
+  "application/x-httpd-php",
+  "application/graphql",
+  "application/ld+json",
 ]);
 
 const TEXT_FILE_EXTENSIONS = new Set([
@@ -199,6 +211,8 @@ const TEXT_FILE_EXTENSIONS = new Set([
   "env",
   "lock",
   "conf",
+  "cnf",
+  "config",
   "properties",
   "tf",
   "go",
@@ -216,6 +230,11 @@ const TEXT_FILE_EXTENSIONS = new Set([
   "kts",
   "sh",
   "bash",
+  "zsh",
+  "fish",
+  "bat",
+  "cmd",
+  "ps1",
   "yaml",
   "yml",
   "toml",
@@ -232,6 +251,32 @@ const TEXT_FILE_EXTENSIONS = new Set([
   "gql",
   "proto",
   "gradle",
+  "m3u8",
+  "m3u",
+  "pls",
+  "cue",
+  "srt",
+  "vtt",
+  "sub",
+  "ass",
+  "ssa",
+  "log",
+  "diff",
+  "patch",
+  "nfo",
+  "svg",
+  "r",
+  "jl",
+  "lua",
+  "pl",
+  "pm",
+  "tcl",
+  "awk",
+  "sed",
+  "tex",
+  "bib",
+  "reg",
+  "inf",
 ]);
 
 // Text files that carry no extension, plus dotfiles whose whole name is the marker.
@@ -269,6 +314,24 @@ export function isTextFileName(filename: string): boolean {
 
   const ext = baseName.includes(".") ? baseName.split(".").pop() : undefined;
   return Boolean(ext && TEXT_FILE_EXTENSIONS.has(ext));
+}
+
+export function isTextBuffer(buffer: Buffer): boolean {
+  if (buffer.length === 0) {
+    return true;
+  }
+  const checkLen = Math.min(buffer.length, 4096);
+  let nonPrintable = 0;
+  for (let i = 0; i < checkLen; i++) {
+    const byte = buffer[i]!;
+    if (byte === 0) {
+      return false;
+    }
+    if (byte < 32 && byte !== 9 && byte !== 10 && byte !== 13) {
+      nonPrintable++;
+    }
+  }
+  return nonPrintable / checkLen < 0.05;
 }
 
 export function isTextMimeType(mimeType: string | undefined, filename?: string): boolean {

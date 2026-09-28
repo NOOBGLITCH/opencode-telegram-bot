@@ -5,6 +5,7 @@ import {
   downloadTelegramFile,
   toDataUri,
   isTextMimeType,
+  isTextBuffer,
   isFileSizeAllowed,
 } from "../../app/services/file-download-service.js";
 import { isDocExtractorConfigured, extractDocument } from "../../app/services/document-extractor-service.js";
@@ -46,7 +47,7 @@ export async function handleDocumentMessage(
   const getStored = deps.getStoredModel ?? getStoredModel;
   const processPrompt = deps.processPrompt ?? processUserPrompt;
 
-  const doc = ctx.message?.document;
+  const doc = ctx.message?.document || ctx.message?.video || ctx.message?.animation;
   if (!doc) {
     return;
   }
@@ -54,8 +55,11 @@ export async function handleDocumentMessage(
   flushPendingPrompt(ctx.chat!.id);
 
   const caption = ctx.message.caption || "";
-  const mimeType = doc.mime_type || "";
-  const filename = doc.file_name || "document";
+  const mimeType = doc.mime_type || ("duration" in doc ? "video/mp4" : "");
+  const filename =
+    ("file_name" in doc && doc.file_name)
+      ? doc.file_name
+      : ("duration" in doc ? "video.mp4" : "document");
   const submitPrompt = async (
     text: string,
     fileParts: FilePartInput[] = [],
@@ -76,31 +80,34 @@ export async function handleDocumentMessage(
 
   try {
     if (isTextMimeType(mimeType, filename)) {
-      if (!isFileSizeAllowed(doc.file_size, config.files.maxFileSizeKb)) {
-        logger.warn(
-          `[Document] Text file too large: ${filename} (${doc.file_size} bytes > ${config.files.maxFileSizeKb}KB)`,
-        );
-        await ctx.reply(
-          t("bot.text_file_too_large", { maxSizeKb: String(config.files.maxFileSizeKb) }),
-        );
-        return;
-      }
-
       await ctx.reply(t("bot.file_downloading"));
       if (await rejectQueuedMediaBeforePreparation(ctx, doc.file_size)) {
         return;
       }
       const downloadedFile = await downloadFile(ctx.api, doc.file_id);
 
-      const textContent = downloadedFile.buffer.toString("utf-8");
+      if (isFileSizeAllowed(doc.file_size, config.files.maxFileSizeKb)) {
+        const textContent = downloadedFile.buffer.toString("utf-8");
+        const promptWithFile = `--- Content of ${filename} ---\n${textContent}\n--- End of file ---\n\n${caption}`;
+        logger.info(
+          `[Document] Sending text file (${downloadedFile.buffer.length} bytes, ${filename}) as prompt`,
+        );
+        await submitPrompt(promptWithFile, [], doc.file_size);
+        return;
+      }
 
-      const promptWithFile = `--- Content of ${filename} ---\n${textContent}\n--- End of file ---\n\n${caption}`;
-
+      // Large text file: attach as file part
+      const dataUri = toDataUri(downloadedFile.buffer, mimeType || "text/plain");
+      const filePart: FilePartInput = {
+        type: "file",
+        mime: mimeType || "text/plain",
+        filename: filename,
+        url: dataUri,
+      };
       logger.info(
-        `[Document] Sending text file (${downloadedFile.buffer.length} bytes, ${filename}) as prompt`,
+        `[Document] Sending large text file (${downloadedFile.buffer.length} bytes, ${filename}) as file attachment`,
       );
-
-      await submitPrompt(promptWithFile, [], doc.file_size);
+      await submitPrompt(caption || `Attached file: ${filename}`, [filePart], doc.file_size);
       return;
     }
 
@@ -222,8 +229,40 @@ export async function handleDocumentMessage(
       return;
     }
 
-    logger.warn(`[Document] Unsupported document MIME type: ${mimeType}, filename=${filename}`);
-    await ctx.reply(t("bot.file_type_unsupported"));
+    // Fallback for all other media / document formats (audio, video, binary, archives, etc.)
+    await ctx.reply(t("bot.file_downloading"));
+    if (await rejectQueuedMediaBeforePreparation(ctx, doc.file_size)) {
+      return;
+    }
+    const downloadedFile = await downloadFile(ctx.api, doc.file_id);
+
+    // If file content is valid text (e.g. m3u8, custom scripts, playlists):
+    if (isTextBuffer(downloadedFile.buffer)) {
+      const textContent = downloadedFile.buffer.toString("utf-8");
+      const promptWithFile = `--- Content of ${filename} ---\n${textContent}\n--- End of file ---\n\n${caption}`;
+      logger.info(
+        `[Document] Sending text-detected file (${downloadedFile.buffer.length} bytes, ${filename}) as prompt`,
+      );
+      await submitPrompt(promptWithFile, [], doc.file_size);
+      return;
+    }
+
+    // Binary / media file: send as FilePartInput to OpenCode
+    const effectiveMime = mimeType || "application/octet-stream";
+    const dataUri = toDataUri(downloadedFile.buffer, effectiveMime);
+    const filePart: FilePartInput = {
+      type: "file",
+      mime: effectiveMime,
+      filename: filename,
+      url: dataUri,
+    };
+
+    logger.info(
+      `[Document] Sending file attachment (${downloadedFile.buffer.length} bytes, ${filename}, ${effectiveMime}) with prompt`,
+    );
+
+    await submitPrompt(caption || `Attached file: ${filename}`, [filePart], doc.file_size);
+    return;
   } catch (err) {
     logger.error("[Document] Error handling document message:", err);
     await ctx.reply(t("bot.file_download_error"));

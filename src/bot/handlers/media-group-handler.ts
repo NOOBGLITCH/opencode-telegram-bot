@@ -9,6 +9,7 @@ import {
   downloadTelegramFile,
   isFileSizeAllowed,
   isTextMimeType,
+  isTextBuffer,
   toDataUri,
 } from "../../app/services/file-download-service.js";
 import { processUserPrompt, type ProcessPromptDeps } from "./prompt.js";
@@ -168,6 +169,14 @@ export class MediaGroupAttachmentHandler {
         ...baseItem,
         kind: "document",
         document: message.document,
+      };
+    }
+
+    if (message.video) {
+      return {
+        ...baseItem,
+        kind: "document",
+        document: message.video as unknown as TelegramDocument,
       };
     }
 
@@ -342,7 +351,15 @@ export class MediaGroupAttachmentHandler {
         continue;
       }
 
-      return { reason: `unsupported_document_mime:${mimeType || "unknown"}` };
+      validItems.push({
+        kind: "file",
+        ctx: item.ctx,
+        messageId: item.messageId,
+        fileId: document.file_id,
+        mime: mimeType || "application/octet-stream",
+        filename,
+      });
+      continue;
     }
 
     if (needsImageSupport || needsPdfSupport) {
@@ -380,11 +397,20 @@ export class MediaGroupAttachmentHandler {
         continue;
       }
 
+      if (isTextBuffer(downloadedFile.buffer)) {
+        const textContent = downloadedFile.buffer.toString("utf-8");
+        textSections.push(
+          `--- Content of ${item.filename} ---\n${textContent}\n--- End of file ---`,
+        );
+        continue;
+      }
+
+      const dataUri = toDataUri(downloadedFile.buffer, item.mime);
       fileParts.push({
         type: "file",
         mime: item.mime,
         filename: item.filename,
-        url: toDataUri(downloadedFile.buffer, item.mime),
+        url: dataUri,
       });
     }
 
